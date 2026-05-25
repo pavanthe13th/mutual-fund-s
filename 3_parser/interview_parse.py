@@ -72,8 +72,18 @@ def clean_dataframe(df: pd.DataFrame, threshold: float = 0.0001) -> pd.DataFrame
     numeric_cols = ["percent_to_nav", "market_value", "quantity", "notional_value", "ytm", "ytc"]
     for col in numeric_cols:
         if col in df.columns and df[col].dtype == "object":
+            # Track which cells originally had a '%' suffix so we can convert
+            # them from percentage form (e.g. '0.13%' meaning 0.13% = 0.0013)
+            # to decimal-fraction form, consistent with how regular_holdings
+            # cells store percentages (already as decimal fractions like 0.0013).
+            # Some derivative-table cells in Jun-2023 store percents as strings
+            # with '%' (e.g. '0.13%'), unlike Dec-2021 which stores them as
+            # raw floats. Without this conversion the percent values are 100x
+            # too large after the '%' strip.
+            had_percent_suffix = df[col].astype(str).str.contains('%', regex=False).fillna(False)
             df[col] = df[col].astype(str).str.replace(r"[$%]", "", regex=True).str.strip()
             df[col] = pd.to_numeric(df[col], errors="coerce")
+            df.loc[had_percent_suffix & df[col].notna(), col] = df.loc[had_percent_suffix & df[col].notna(), col] / 100
 
     for col in df.select_dtypes(include=[np.number]).columns:
         mask = df[col].notna() & (df[col].abs() < threshold)
