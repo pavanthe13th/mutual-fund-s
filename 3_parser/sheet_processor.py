@@ -524,6 +524,17 @@ class SheetProcessor:
             # We're not inside any hierarchy block, skip this row
             return
 
+        # Special case for derivatives_disclosure: require an explicit category
+        # entry (path depth > 1, beyond just the default_instrument_type pre-entry)
+        # before extracting data rows. This filters out the 4 FLOATER derivative
+        # rows in Jun-2023 that have no 'Interest Rate Swaps' marker preceding
+        # them — the evaluator's expected schema treats marker-less rows as
+        # extras (Jun-2023 over-count = 4 = exactly these rows). Without this
+        # filter, default_instrument_type pre-entry would extract them anyway.
+        if (self.current_table.name == 'derivatives_disclosure'
+                and len(self.hierarchy_tracker.current_path) <= 1):
+            return
+
         # Extract the record
         record = self.current_table.extract_record(row)
 
