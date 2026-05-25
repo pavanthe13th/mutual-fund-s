@@ -327,7 +327,7 @@
         },
         {
           "index": 4,
-          "output_name": "percent_to_net_assets",
+          "output_name": "percent_to_nav",
           "input_name": "% To net assets"
         }
       ],
