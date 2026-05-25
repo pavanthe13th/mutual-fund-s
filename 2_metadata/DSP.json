@@ -24,11 +24,6 @@
       "exclude": true
     },
     {
-      "pattern": "TREPS",
-      "match_field": "instrument_name",
-      "exclude": true
-    },
-    {
       "pattern": "TREPS / Reverse Repo Investments / Corporate Debt Repo",
       "match_field": "instrument_name",
       "category": "TREPS / Reverse Repo Investments / Corporate Debt Repo"
@@ -37,6 +32,11 @@
       "pattern": "TREPS / Reverse Repo Investments",
       "match_field": "instrument_name",
       "category": "TREPS / Reverse Repo Investments"
+    },
+    {
+      "pattern": "TREPS",
+      "match_field": "instrument_name",
+      "exclude": true
     }
   ],
   "table_structures": [
