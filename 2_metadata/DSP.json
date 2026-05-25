@@ -299,6 +299,39 @@
         }
       ],
       "vertical_hierarchy": []
+    },
+    {
+      "name": "derivatives_disclosure",
+      "table_end_keywords": [
+        "Scheme Riskometer",
+        "Riskometer",
+        "Portfolio Information",
+        "Notes:"
+      ],
+      "default_instrument_type": "DERIVATIVES",
+      "header_columns": [
+        {
+          "index": 1,
+          "output_name": "instrument_name",
+          "input_name": "Disclosure in Derivatives"
+        },
+        {
+          "index": 2,
+          "output_name": "industry",
+          "input_name": "Industry"
+        },
+        {
+          "index": 3,
+          "output_name": "notional_value",
+          "input_name": "Notional Value"
+        },
+        {
+          "index": 4,
+          "output_name": "percent_to_net_assets",
+          "input_name": "% To net assets"
+        }
+      ],
+      "vertical_hierarchy": []
     }
   ]
 }
