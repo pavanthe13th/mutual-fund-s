@@ -105,7 +105,7 @@ def _is_valid_fund_name_candidate(text: str) -> bool:
         return False
 
     # Reject scheme descriptions (parentheses with descriptive words) and non-primary label phrases
-    non_primary_label_phrases = ['index fund', 'smart beta']
+    non_primary_label_phrases = ['smart beta']  # was ['index fund', 'smart beta']; 'index fund' rejected legitimate names like 'DSP Nifty SDL Plus G-Sec Sep 2027 50:50 Index Fund'
     if (
         (text_str.startswith('(') and any(word in text_lower for word in ['scheme', 'investing', 'securities', 'risk']))
         or any(phrase in text_lower for phrase in non_primary_label_phrases)
