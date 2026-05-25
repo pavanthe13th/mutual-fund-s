@@ -742,26 +742,42 @@ class SheetProcessor:
         if populated_columns == 0:
             return False
 
-        # Filter out records where all data fields are "NIL", "N/A", or similar placeholders
+        # Filter out records where all data fields are "NIL", "N/A", or similar placeholders.
+        # `security_name` is a name field (used by defaulted_securities_disclosure as the
+        # primary identifier), so it is excluded from the data-fields tally below — otherwise
+        # footnote rows that only have a stray comment in the name column would survive
+        # validation just because that single string is non-empty.
         metadata_fields = ['fund_code', 'fund_name', 'table_type', 'instrument_type',
-                          'category', 'subcategory', 'instrument_name', 'issuer_name', 'industry']
+                          'category', 'subcategory', 'instrument_name', 'security_name',
+                          'issuer_name', 'industry']
         data_fields = {k: v for k, v in record.items() if k not in metadata_fields and v is not None}
 
-        if data_fields:
-            all_placeholders = True
-            for value in data_fields.values():
-                value_str = str(value).strip().upper()
-                if value_str not in ['NIL', 'N/A', 'NA', '-', '']:
-                    all_placeholders = False
-                    break
+        # If nothing but a name field is populated, this isn't a real holding row.
+        if not data_fields:
+            return False
 
-            if all_placeholders:
-                return False
+        all_placeholders = True
+        for value in data_fields.values():
+            value_str = str(value).strip().upper()
+            if value_str not in ['NIL', 'N/A', 'NA', '-', '']:
+                all_placeholders = False
+                break
+
+        if all_placeholders:
+            return False
 
         # Filter out rows with "total" in instrument name (Sub Total, Total, GRAND TOTAL, etc.)
-        instrument_name = record.get('instrument_name', '')
+        # Some tables (e.g. defaulted_securities_disclosure) use `security_name` instead of
+        # `instrument_name`. Fall back through the known name-bearing fields so those rows
+        # are not silently rejected before validation gets to look at their data.
+        instrument_name = (
+            record.get('instrument_name')
+            or record.get('security_name')
+            or record.get('issuer_name')
+            or ''
+        )
 
-        # Filter out records with empty or missing instrument_name
+        # Filter out records with no name at all
         if not instrument_name or (isinstance(instrument_name, str) and not instrument_name.strip()):
             return False
 
