@@ -24,11 +24,6 @@
       "exclude": true
     },
     {
-      "pattern": "TREPS",
-      "match_field": "instrument_name",
-      "exclude": true
-    },
-    {
       "pattern": "TREPS / Reverse Repo Investments / Corporate Debt Repo",
       "match_field": "instrument_name",
       "category": "TREPS / Reverse Repo Investments / Corporate Debt Repo"
@@ -37,6 +32,11 @@
       "pattern": "TREPS / Reverse Repo Investments",
       "match_field": "instrument_name",
       "category": "TREPS / Reverse Repo Investments"
+    },
+    {
+      "pattern": "TREPS",
+      "match_field": "instrument_name",
+      "exclude": true
     }
   ],
   "table_structures": [
@@ -299,6 +299,55 @@
         }
       ],
       "vertical_hierarchy": []
+    },
+    {
+      "name": "derivatives_disclosure",
+      "table_end_keywords": [
+        "Scheme Riskometer",
+        "Riskometer",
+        "Portfolio Information",
+        "Notes:"
+      ],
+      "default_instrument_type": "DERIVATIVES",
+      "header_columns": [
+        {
+          "index": 1,
+          "output_name": "instrument_name",
+          "input_name": "Disclosure in Derivatives"
+        },
+        {
+          "index": 2,
+          "output_name": "industry",
+          "input_name": "Industry"
+        },
+        {
+          "index": 3,
+          "output_name": "notional_value",
+          "input_name": "Notional Value"
+        },
+        {
+          "index": 4,
+          "output_name": "percent_to_nav",
+          "input_name": "% To net assets"
+        }
+      ],
+      "vertical_hierarchy": [
+        {
+          "instrument_type": "DERIVATIVES",
+          "children": [
+            {
+              "category_type": "Interest Rate Swaps",
+              "end_keywords": [
+                "Total",
+                "Scheme Riskometer",
+                "Riskometer",
+                "Portfolio Information",
+                "Notes:"
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }

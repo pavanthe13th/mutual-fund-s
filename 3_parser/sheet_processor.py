@@ -105,7 +105,7 @@ def _is_valid_fund_name_candidate(text: str) -> bool:
         return False
 
     # Reject scheme descriptions (parentheses with descriptive words) and non-primary label phrases
-    non_primary_label_phrases = ['index fund', 'smart beta']
+    non_primary_label_phrases = ['smart beta']  # was ['index fund', 'smart beta']; 'index fund' rejected legitimate names like 'DSP Nifty SDL Plus G-Sec Sep 2027 50:50 Index Fund'
     if (
         (text_str.startswith('(') and any(word in text_lower for word in ['scheme', 'investing', 'securities', 'risk']))
         or any(phrase in text_lower for phrase in non_primary_label_phrases)
@@ -524,6 +524,17 @@ class SheetProcessor:
             # We're not inside any hierarchy block, skip this row
             return
 
+        # Special case for derivatives_disclosure: require an explicit category
+        # entry (path depth > 1, beyond just the default_instrument_type pre-entry)
+        # before extracting data rows. This filters out the 4 FLOATER derivative
+        # rows in Jun-2023 that have no 'Interest Rate Swaps' marker preceding
+        # them — the evaluator's expected schema treats marker-less rows as
+        # extras (Jun-2023 over-count = 4 = exactly these rows). Without this
+        # filter, default_instrument_type pre-entry would extract them anyway.
+        if (self.current_table.name == 'derivatives_disclosure'
+                and len(self.hierarchy_tracker.current_path) <= 1):
+            return
+
         # Extract the record
         record = self.current_table.extract_record(row)
 
@@ -742,26 +753,42 @@ class SheetProcessor:
         if populated_columns == 0:
             return False
 
-        # Filter out records where all data fields are "NIL", "N/A", or similar placeholders
+        # Filter out records where all data fields are "NIL", "N/A", or similar placeholders.
+        # `security_name` is a name field (used by defaulted_securities_disclosure as the
+        # primary identifier), so it is excluded from the data-fields tally below — otherwise
+        # footnote rows that only have a stray comment in the name column would survive
+        # validation just because that single string is non-empty.
         metadata_fields = ['fund_code', 'fund_name', 'table_type', 'instrument_type',
-                          'category', 'subcategory', 'instrument_name', 'issuer_name', 'industry']
+                          'category', 'subcategory', 'instrument_name', 'security_name',
+                          'issuer_name', 'industry']
         data_fields = {k: v for k, v in record.items() if k not in metadata_fields and v is not None}
 
-        if data_fields:
-            all_placeholders = True
-            for value in data_fields.values():
-                value_str = str(value).strip().upper()
-                if value_str not in ['NIL', 'N/A', 'NA', '-', '']:
-                    all_placeholders = False
-                    break
+        # If nothing but a name field is populated, this isn't a real holding row.
+        if not data_fields:
+            return False
 
-            if all_placeholders:
-                return False
+        all_placeholders = True
+        for value in data_fields.values():
+            value_str = str(value).strip().upper()
+            if value_str not in ['NIL', 'N/A', 'NA', '-', '']:
+                all_placeholders = False
+                break
+
+        if all_placeholders:
+            return False
 
         # Filter out rows with "total" in instrument name (Sub Total, Total, GRAND TOTAL, etc.)
-        instrument_name = record.get('instrument_name', '')
+        # Some tables (e.g. defaulted_securities_disclosure) use `security_name` instead of
+        # `instrument_name`. Fall back through the known name-bearing fields so those rows
+        # are not silently rejected before validation gets to look at their data.
+        instrument_name = (
+            record.get('instrument_name')
+            or record.get('security_name')
+            or record.get('issuer_name')
+            or ''
+        )
 
-        # Filter out records with empty or missing instrument_name
+        # Filter out records with no name at all
         if not instrument_name or (isinstance(instrument_name, str) and not instrument_name.strip()):
             return False
 

@@ -4,3 +4,7 @@ __pycache__/
 
 interview_assignment/submissions/candidate_output/
 interview_assignment/evaluator/_runs/
+.local_baseline.json
+4_output_interview/
+INTERVIEW_PREP.md
+DECISION_LOG.md
