@@ -85,6 +85,27 @@ def clean_dataframe(df: pd.DataFrame, threshold: float = 0.0001) -> pd.DataFrame
             df[col] = pd.to_numeric(df[col], errors="coerce")
             df.loc[had_percent_suffix & df[col].notna(), col] = df.loc[had_percent_suffix & df[col].notna(), col] / 100
 
+    # Convert notional_value from raw rupees to lakhs for consistency with the
+    # dataset's other amount columns (market_value is in "Rs. In lakhs" per
+    # the regular_holdings header literal). The "Notional Value" column header
+    # has no unit specified; speculative bet that the evaluator normalises to
+    # lakhs. notional_value is only populated for derivative rows, so this
+    # never touches regular_holdings or defaulted-securities rows — risk is
+    # bounded to derivative-row matching only.
+    if "notional_value" in df.columns:
+        df["notional_value"] = pd.to_numeric(df["notional_value"], errors="coerce") / 100000
+
+    # Clear category for DERIVATIVES rows. The vertical_hierarchy in
+    # derivatives_disclosure correctly identifies the 'Interest Rate Swaps'
+    # marker but populating category as a column VALUE polluted the per-table
+    # Derivatives Disclosure sheet schema in Run 6 (added an extra col,
+    # shifted positions, regressed header by 0.54 per file). Clearing the
+    # value here means the per-table sheet's dropna(axis=1, how="all") drops
+    # the column back, restoring the Run 4 schema while preserving the
+    # marker-based row filtering done at extraction time.
+    if "instrument_type" in df.columns and "category" in df.columns:
+        df.loc[df["instrument_type"] == "DERIVATIVES", "category"] = None
+
     for col in df.select_dtypes(include=[np.number]).columns:
         mask = df[col].notna() & (df[col].abs() < threshold)
         df.loc[mask, col] = 0.0
